@@ -1,0 +1,11 @@
+oauthlib
+pyotp
+openpyxl
+omspy
+git+https://github.com/pannet1/omspy-brokers.git
+git+https://github.com/pannet1/toolkit.git
+python-multipart
+uvicorn[standard]
+fastapi
+smartapi-python
+jinja2
