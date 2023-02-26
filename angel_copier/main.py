@@ -48,16 +48,23 @@ cop = Copier(dct_lots)
 
 
 def get_pos(obj):
-    pos = obj._broker.positions
-    data = None
-    if type(pos) is dict:
-        for k, v in pos.items():
-            if k == "data":
-                data = v
-                data = [{key.replace("tradingsymbol", "symbol"): value for key, value in data[0].items()}]
-                data = [{key.replace("netqty", "quantity"): value for key, value in data[0].items()}]
-                data = [{key.replace("producttype", "product"): value for key, value in data[0].items()}]
-    return data
+    try:
+        pos = obj._broker.positions
+        data = None
+        if type(pos) is dict:
+            for k, v in pos.items():
+                if k == "data" and v:
+                    data = v
+                    data = [
+                        {key.replace("tradingsymbol", "symbol"): value for key, value in data[0].items()}]
+                    data = [
+                        {key.replace("netqty", "quantity"): value for key, value in data[0].items()}]
+                    data = [
+                        {key.replace("producttype", "product"): value for key, value in data[0].items()}]
+    except Exception as e:
+        print(f' error {e} while getting positions')
+    else:
+        return data
 
 
 def flwrs_pos():
@@ -66,26 +73,29 @@ def flwrs_pos():
     the follower user accounts
     """
     try:
-        df_pos = pd.DataFrame()
+        df_ord = df_pos = pd.DataFrame()
         ldr_pos = get_pos(obj_ldr)
         if ldr_pos:
             dct_ldr = cop.filter_pos(ldr_pos)
             cop.set_ldr_df(dct_ldr, ignore)
-        if not cop.df_ldr.empty:
-            for id, u in objs_usr.items():
-                # we show position of flwrs only
-                # if there is leader positions
-                # pass the flwr multiplier from xls
-                df_tgt = cop.get_tgt_df(u._multiplier)
-                pos = get_pos(u)
-                dct_flwr = cop.filter_pos(pos)
-                # pass the user id from xls
-                df_ord = cop.get_diff_pos(u._userid, df_tgt, dct_flwr)
-                df_ord = df_ord[df_ord.quantity != '0']
-                # join the order dfs
-                if not df_ord.empty:
-                    df_pos = df_ord if df_pos.empty else pd.concat(
-                        [df_pos, df_ord], sort=True)
+            if not cop.df_ldr.empty:
+                for id, u in objs_usr.items():
+                    # we show position of flwrs only
+                    # if there is eader positions
+                    # pass the flwr multiplier from xls
+                    df_tgt = cop.get_tgt_df(u._multiplier)
+                    pos = get_pos(u)
+                    if pos:
+                        dct_flwr = cop.filter_pos(pos)
+                    else:
+                        dct_flwr = {}
+                        # pass the user id from xls
+                        df_ord = cop.get_diff_pos(u._userid, df_tgt, dct_flwr)
+                        df_ord = df_ord[df_ord.quantity != '0']
+                    # join the order dfs
+                    if not df_ord.empty:
+                        df_pos = df_ord if df_pos.empty else pd.concat(
+                            [df_pos, df_ord], sort=True)
     except Exception as e:
         print(f'{e} in flwr pos')
     finally:
@@ -122,15 +132,15 @@ def do_multiply(multiplied):
                     remainder = int(abs(quantity % iceberg) * dir)
                     if abs(remainder) > 0:
                         m['quantity'] = remainder
-                        status = obj_usr.place_order(**m)
+                        status = obj_usr.place_order(m)
                     times = int(abs(quantity) / iceberg)
                     for i in range(times):
                         m['quantity'] = iceberg * dir
-                        status = obj_usr.place_order(**m)
+                        status = obj_usr.place_order(m)
             else:
                 m['quantity'] = int(quantity)
-            status = obj_usr.place_order(**m)
-            # logging.info(f'order: {status} {m}')
+            status = obj_usr.place_order(m)
+            logging.info(f'order: {status} {m}')
         except Exception as e:
             logging.warning(f"while multiplying {e}")
 
@@ -145,18 +155,18 @@ def slp_til_next_sec():
 if futil.is_file_not_2day(dumpfile):
     obj_ldr.contracts(dumpfile)
 while True:
-    data = {}
-    data['positions'] = [{'MESSAGE': 'no positions yet'}]
-    df_pos = flwrs_pos()
-    if not df_pos.empty:
-        data['positions'] = df_pos.to_dict('records')
-        do_multiply(data['positions'])
-    interval = 1
-    sleep(interval)
-    print(f'sleeping for {interval} ms')
+    try:
+        data = {}
+        data['positions'] = [{'MESSAGE': 'no positions yet'}]
+        df_pos = flwrs_pos()
+        if not df_pos.empty:
+            data['positions'] = df_pos.to_dict('records')
+            do_multiply(data['positions'])
+        interval = 1
+        sleep(interval)
+        print(f'sleeping for {interval} ms')
 
-    """
-    m['quantity'] = dir * \
-        iceberg if iceberg > 0 and abs(
-            quantity) > iceberg else int(quantity)
-    """
+    except Exception as e:
+        print(f"error {e} in the main loop")
+        sleep(1)
+        continue

@@ -70,7 +70,7 @@ class Copier():
         print(f"\n=== TARGET after multiplier {multiply} ===")
         df_tgt = self.df_ldr.copy()
         if not df_tgt.empty:
-            df_tgt['quantity'] = df_tgt.quantity * multiply
+            df_tgt['quantity'] = (df_tgt.quantity).astype(int) * multiply
             df_tgt['quantity'] = df_tgt.apply(
                 self._rounded_lot, axis=1).astype(int)
         print(df_tgt)
