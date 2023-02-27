@@ -11,7 +11,7 @@ logging = Logger(20)  # 2nd param 'logfile.log'
 
 ignore = [
     {'product': 'CNC'},
-    {'symbol': 'HDFC-EQ', 'exchange': 'NSE'}
+    {'symbol': 'HDFC-EQ', 'exchange': 'NSE'},
 ]
 ORDER_TYPE = 'LIMIT'  # OR MARKET
 BUFF = 2              # Rs. to add/sub to LTP
