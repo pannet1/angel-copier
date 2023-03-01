@@ -6,8 +6,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from toolkit.logger import Logger
 import inspect
-import pandas as pd
-# from tests.big import test_trades as big
 
 logging = Logger(20)  # 2nd param 'logfile.log'
 fpath = '../../../../confid/ketan_users.xls'

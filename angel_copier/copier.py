@@ -30,8 +30,12 @@ class Copier():
             return df.quantity
         for k, v in self.dct_lots.items():
             if (df.symbol).startswith(k):
-                tmp = int(df.quantity) / v
-                return tmp * v
+                tmp = abs(df.quantity) / v
+                tmp = int(tmp) * v
+                if tmp <= 0:
+                    return 0
+                else:
+                    return tmp
         return df.quantity
 
     def filter_pos(self, pos):
@@ -78,7 +82,7 @@ class Copier():
 
     def get_diff_pos(self,  userid: str, tgt: pd.DataFrame, lst_flwr_pos):
         """
-        calculate required order quantity given the target and
+        calculat required order quantity given the target and
         current follower position
         """
         tgt = tgt.rename(columns={'quantity': 'tgt'})

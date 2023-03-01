@@ -5,6 +5,7 @@ from user import User
 from datetime import datetime as dt
 from time import sleep
 import pandas as pd
+from tests.small import test_trades as small
 
 
 logging = Logger(20)  # 2nd param 'logfile.log'
@@ -19,6 +20,7 @@ dct_lots = {'NIFTY': 50, 'BANKNIFTY': 25, 'FINNIFTY': 40}
 maxlots = {'NIFTY': 900, 'BANKNIFTY': 1800, 'FINNIFTY': 1000}
 fpath = '../../../../confid/ketan_users.xls'
 dumpfile = "../../../../confid/symbols.json"
+TEST = True
 futil = Fileutils()
 
 
@@ -74,9 +76,9 @@ def flwrs_pos():
     """
     try:
         df_ord = df_pos = pd.DataFrame()
-        ldr_pos = get_pos(obj_ldr)
-        if ldr_pos:
-            dct_ldr = cop.filter_pos(ldr_pos)
+        ldr_pos = small if TEST else get_pos(obj_ldr)
+        if ldr_pos or TEST:
+            dct_ldr = cop.filter_pos(small)
             cop.set_ldr_df(dct_ldr, ignore)
             if not cop.df_ldr.empty:
                 for id, u in objs_usr.items():
@@ -89,13 +91,15 @@ def flwrs_pos():
                         dct_flwr = cop.filter_pos(pos)
                     else:
                         dct_flwr = {}
-                        # pass the user id from xls
-                        df_ord = cop.get_diff_pos(u._userid, df_tgt, dct_flwr)
-                        df_ord = df_ord[df_ord.quantity != '0']
+                    # pass the user id from xls
+                    df_ord = cop.get_diff_pos(u._userid, df_tgt, dct_flwr)
+                    df_ord = df_ord[df_ord.quantity != '0']
                     # join the order dfs
                     if not df_ord.empty:
                         df_pos = df_ord if df_pos.empty else pd.concat(
                             [df_pos, df_ord], sort=True)
+                    else:
+                        print("no follower orders")
     except Exception as e:
         print(f'{e} in flwr pos')
     finally:
@@ -128,19 +132,31 @@ def do_multiply(multiplied):
                 symbol = next(k for k, v in maxlots.items()
                               if m['symbol'].startswith(k))
                 iceberg = maxlots.get(symbol, 0)
+                # iceberg slicing needed
                 if iceberg > 0 and abs(quantity) >= iceberg:
                     remainder = int(abs(quantity % iceberg) * dir)
                     if abs(remainder) > 0:
-                        m['quantity'] = remainder
+                        m['quantity'] = abs(remainder)
+                        print(f"remainder {m['quantity']}")
                         status = obj_usr.place_order(m)
+                        logging.info(f'order: {status} {m}')
                     times = int(abs(quantity) / iceberg)
                     for i in range(times):
-                        m['quantity'] = iceberg * dir
+                        m['quantity'] = iceberg
                         status = obj_usr.place_order(m)
+                        logging.info(f'order: {status} {m}')
+                elif iceberg > 0 and abs(quantity) < iceberg:
+                    # iceberg slicing not needed
+                    SINGLE_ORDER = True
             else:
-                m['quantity'] = int(quantity)
-            status = obj_usr.place_order(m)
-            logging.info(f'order: {status} {m}')
+                SINGLE_ORDER = True
+
+            if SINGLE_ORDER:
+                SINGLE_ORDER = False
+                m['quantity'] = abs(int(quantity))
+                print(f"exch is not NFO and qty is {m['quantity']}")
+                status = obj_usr.place_order(m)
+                logging.info(f'order: {status} {m}')
         except Exception as e:
             logging.warning(f"while multiplying {e}")
 
@@ -162,6 +178,8 @@ while True:
         if not df_pos.empty:
             data['positions'] = df_pos.to_dict('records')
             do_multiply(data['positions'])
+        else:
+            print("follower positions are empty")
         interval = 1
         sleep(interval)
         print(f'sleeping for {interval} ms')

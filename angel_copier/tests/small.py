@@ -17,7 +17,7 @@ test_trades = [
     {
         "user_order_id": "1",
         "side": "SELL",
-        "symbol": "NIFTY21DEC17000CE",
+        "symbol": "NIFTY29MAR2317600PE",
         "trade_price": 15.1,
         "trade_id": "27374476",
         "product": "MIS",
