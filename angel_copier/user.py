@@ -54,7 +54,7 @@ class User(object):
             "quantity": kwargs["quantity"]
         }
         params['trigger_price'] = kwargs.get('trigger_price', '0')
-        return self._broker.order_place(params)
+        return self._broker.order_place(**params)
 
     def contracts(self, dumpfile):
         headers = {

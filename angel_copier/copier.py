@@ -8,7 +8,7 @@ def differance(s):
     calculate the differance quantity required
     given the target and follower positions
     """
-    value = s['tgt'] - s['flwr']
+    value = int(s['tgt']) - int(s['flwr'])
     return str(int(value))
 
 
@@ -26,16 +26,20 @@ class Copier():
         """
         rounds quantity product to the nearest lot
         """
-        if df.quantity == 0:
+        qty = df.quantity
+        if qty == 0:
             return df.quantity
+        dir = 1 if qty > 0 else -1
         for k, v in self.dct_lots.items():
             if (df.symbol).startswith(k):
-                tmp = abs(df.quantity) / v
-                tmp = int(tmp) * v
+                if abs(qty) < v:
+                    return 0
+                tmp = qty / v
+                tmp = abs(int(tmp)) * v
                 if tmp <= 0:
                     return 0
                 else:
-                    return tmp
+                    return tmp * dir
         return df.quantity
 
     def filter_pos(self, pos):
@@ -58,11 +62,9 @@ class Copier():
 
     def set_ldr_df(self, lst: list, fltr_dcts: list):
         df_ldr = pd.DataFrame(data=lst)
-        print(df_ldr)
         if not df_ldr.empty:
             for fltr_dct in fltr_dcts:
                 df_ldr = self.fltr_ign(df_ldr, fltr_dct)
-
         self.df_ldr = df_ldr
         print("===  LEADER ===")
         print(self.df_ldr)

@@ -7,8 +7,7 @@ from time import sleep
 import pandas as pd
 from tests.small import test_trades as small
 
-
-logging = Logger(20)  # 2nd param 'logfile.log'
+logging = Logger(30)  # 2nd param 'logfile.log'
 
 ignore = [
     {'product': 'CNC'},
@@ -20,7 +19,7 @@ dct_lots = {'NIFTY': 50, 'BANKNIFTY': 25, 'FINNIFTY': 40}
 maxlots = {'NIFTY': 900, 'BANKNIFTY': 1800, 'FINNIFTY': 1000}
 fpath = '../../../../confid/ketan_users.xls'
 dumpfile = "../../../../confid/symbols.json"
-TEST = True
+TEST = False
 futil = Fileutils()
 
 
@@ -49,24 +48,30 @@ cop = Copier(dct_lots)
 # df_pos = pd.DataFrame()
 
 
+def replace_key(fm_key, to_key, dct_keys):
+    if dct_keys.get(fm_key, False):
+        dct_keys[to_key] = dct_keys[fm_key]
+        dct_keys.pop(fm_key)
+    return dct_keys
+
+
 def get_pos(obj):
     try:
+        lst_pos = []
         pos = obj._broker.positions
-        data = None
-        if type(pos) is dict:
-            for k, v in pos.items():
-                if k == "data" and v:
-                    data = v
-                    data = [
-                        {key.replace("tradingsymbol", "symbol"): value for key, value in data[0].items()}]
-                    data = [
-                        {key.replace("netqty", "quantity"): value for key, value in data[0].items()}]
-                    data = [
-                        {key.replace("producttype", "product"): value for key, value in data[0].items()}]
+        lst_data = pos.get('data', None)
+        if type(lst_data) is list:
+            for each_pos in lst_data:
+                if type(each_pos) is dict:
+                    dct_pos = each_pos
+                    dct_pos = replace_key('tradingsymbol', 'symbol', dct_pos)
+                    dct_pos = replace_key("netqty", "quantity", dct_pos)
+                    dct_pos = replace_key("producttype", "product", dct_pos)
+                    lst_pos.append(dct_pos)
     except Exception as e:
         print(f' error {e} while getting positions')
     else:
-        return data
+        return lst_pos
 
 
 def flwrs_pos():
@@ -77,8 +82,8 @@ def flwrs_pos():
     try:
         df_ord = df_pos = pd.DataFrame()
         ldr_pos = small if TEST else get_pos(obj_ldr)
-        if ldr_pos or TEST:
-            dct_ldr = cop.filter_pos(small)
+        if ldr_pos:
+            dct_ldr = cop.filter_pos(ldr_pos)
             cop.set_ldr_df(dct_ldr, ignore)
             if not cop.df_ldr.empty:
                 for id, u in objs_usr.items():
@@ -139,12 +144,12 @@ def do_multiply(multiplied):
                         m['quantity'] = abs(remainder)
                         print(f"remainder {m['quantity']}")
                         status = obj_usr.place_order(m)
-                        logging.info(f'order: {status} {m}')
+                        logging.info(f'remainder order: {status} {m}')
                     times = int(abs(quantity) / iceberg)
                     for i in range(times):
                         m['quantity'] = iceberg
                         status = obj_usr.place_order(m)
-                        logging.info(f'order: {status} {m}')
+                        logging.info(f'iceberg order: {status} {m}')
                 elif iceberg > 0 and abs(quantity) < iceberg:
                     # iceberg slicing not needed
                     SINGLE_ORDER = True
@@ -154,9 +159,8 @@ def do_multiply(multiplied):
             if SINGLE_ORDER:
                 SINGLE_ORDER = False
                 m['quantity'] = abs(int(quantity))
-                print(f"exch is not NFO and qty is {m['quantity']}")
                 status = obj_usr.place_order(m)
-                logging.info(f'order: {status} {m}')
+                logging.info(f'single order: {status} {m}')
         except Exception as e:
             logging.warning(f"while multiplying {e}")
 
