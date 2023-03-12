@@ -13,8 +13,8 @@ ignore = [
     {'product': 'CNC'},
     {'symbol': 'HDFC-EQ', 'exchange': 'NSE'},
 ]
-ORDER_TYPE = 'LIMIT'  # OR MARKET
-BUFF = 2              # Rs. to add/sub to LTP
+ORDER_TYPE = 'MARKET'  # OR MARKET
+BUFF = 50              # Rs. to add/sub to LTP
 dct_lots = {'NIFTY': 50, 'BANKNIFTY': 25, 'FINNIFTY': 40}
 maxlots = {'NIFTY': 900, 'BANKNIFTY': 1800, 'FINNIFTY': 1000}
 fpath = '../../../../confid/ketan_users.xls'
