@@ -51,8 +51,22 @@ async def users(request: Request):
     ctx['data'] = ["no data"]
     body = []
     for keys, row in objs_usr.items():
-        th = ['user id', 'target', 'max loss', 'disabled']
-        td = [row._userid, row._target, row._max_loss, row._disabled]
+        th = ['user id', 'target', 'max loss', 'disabled', 'orders', 'pnl']
+        td = [
+            row._userid,
+            row._target,
+            row._max_loss,
+            row._disabled,
+            ]
+        u = objs_usr.get(row._userid)
+        orders = u._broker.orders
+        td.append(len(orders['data']))
+        pos = u._broker.positions
+        lst_pos = pos.get('data', [])
+        sum = 0
+        for dct in lst_pos:
+            sum += int(float(dct.get('pnl', 0)))
+        td.append(sum)
         body.append(td)
     if len(body) > 0:
         ctx['th'] = th
@@ -71,7 +85,44 @@ async def orders(request: Request,
         u = objs_usr[user_id]
         pos = u._broker.orders
         lst_pos = pos.get('data', [])
+        pop_keys = [
+                'variety',
+                'producttype',
+                'duration',
+                'price',
+                'squareoff',
+                'trailingstoploss',
+                'stoploss',
+                'triggerprice',
+                'disclosedquantity',
+                'exchange',
+                'symboltoken',
+                'ordertag',
+                'instrumenttype',
+                'expirydate',
+                'strikeprice',
+                'optiontype',
+                'filledshares',
+                'unfilledshares',
+                'cancelsize',
+                'status',
+                'exchtime',
+                'exchorderupdatetime',
+                'fillid',
+                'filltime',
+                'parentorderid'
+                ]
         for f_dct in lst_pos:
+            [f_dct.pop(key) for key in pop_keys]
+            quantity = f_dct.pop('quantity', 0)
+            lotsize = f_dct.pop('lotsize', 0)
+            try:
+                lots = int(quantity) / int(lotsize)
+            except Exception as e:
+                print({e})
+                f_dct['quantity'] = quantity
+            else:
+                f_dct['quantity'] = int(lots)
             k = f_dct.keys()
             th = list(k)
             v = f_dct.values()
@@ -94,7 +145,51 @@ async def positions(request: Request,
         u = objs_usr[user_id]
         pos = u._broker.positions
         lst_pos = pos.get('data', [])
+        pop_keys = [
+                "symboltoken",
+                "instrumenttype",
+                "priceden",
+                "pricenum",
+                "genden",
+                "gennum",
+                "precision",
+                "multiplier",
+                "boardlotsize",
+                "exchange",
+                "tradingsymbol",
+                "symbolgroup",
+                "cfbuyqty",
+                "cfsellqty",
+                "cfbuyamount",
+                "cfsellamount",
+                "buyavgprice",
+                "sellavgprice",
+                "avgnetprice",
+                "netvalue",
+                "totalbuyvalue",
+                "totalsellvalue",
+                "cfbuyavgprice",
+                "cfsellavgprice",
+                "totalbuyavgprice",
+                "totalsellavgprice",
+                "netprice",
+                "buyqty",
+                "sellqty",
+                "buyamount",
+                "sellamount",
+                "close"
+                ]
         for f_dct in lst_pos:
+            [f_dct.pop(key) for key in pop_keys]
+            quantity = f_dct.pop('netqty', 0)
+            lotsize = f_dct.pop('lotsize', 0)
+            try:
+                lots = int(quantity) / int(lotsize)
+            except Exception as e:
+                print({e})
+                f_dct['netqty'] = quantity
+            else:
+                f_dct['netqty'] = int(lots)
             k = f_dct.keys()
             th = list(k)
             v = f_dct.values()
