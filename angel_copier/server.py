@@ -59,8 +59,14 @@ async def users(request: Request):
             row._disabled,
             ]
         u = objs_usr.get(row._userid)
-        orders = u._broker.orders
-        td.append(len(orders['data']))
+        dict_orders = u._broker.orders
+        orders = dict_orders.get('data', [])
+        completed_count = 0
+        if isinstance(orders, list):
+            for item in orders:
+                if isinstance(item, dict) and item.get('orderstatus') == 'complete':
+                    completed_count += 1
+        td.append(completed_count)
         pos = u._broker.positions
         lst_pos = pos.get('data', [])
         sum = 0
