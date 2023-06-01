@@ -1,1 +1,2 @@
-"c:\Program Files\Git\cmd\git.exe" pull https://github.com/pannet1/angel-copier main
+"c:\Program Files\Git\cmd\git.exe" reset --hard & "c:\Program Files\Git\cmd\git.exe" pull
+

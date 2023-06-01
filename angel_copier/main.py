@@ -7,25 +7,39 @@ from time import sleep
 import pandas as pd
 from tests.small import test_trades as small
 
-logging = Logger(30)  # 2nd param 'logfile.log'
 
-ignore = [
-    {'product': 'CNC'},
-    {'symbol': 'HDFC-EQ', 'exchange': 'NSE'},
-]
 ORDER_TYPE = 'MARKET'  # OR MARKET
 BUFF = 50              # Rs. to add/sub to LTP
-dct_lots = {'NIFTY': 50, 'BANKNIFTY': 25, 'FINNIFTY': 40}
-maxlots = {'NIFTY': 900, 'BANKNIFTY': 1800, 'FINNIFTY': 1000}
-fpath = '../../../../confid/ketan_users.xls'
-dumpfile = "../../../../confid/symbols.json"
+filename = 'users_ao.xls'
+
+sec_dir = "../../../"
+dumpfile = sec_dir + "symbols.json"
+logging = Logger(20, sec_dir + "angel-copier.log")  # 2nd param 'logfile.log'
+
 TEST = False
-futil = Fileutils()
+futl = Fileutils()
 
 
-def load_all_users(fpath=fpath):
+def get_preferences():
+    try:
+        yaml_file = sec_dir + "ignore.yaml"
+        ignore = futl.get_lst_fm_yml(yaml_file)
+        print(f"ignore: {ignore}")
+        lotsize = futl.get_lst_fm_yml(sec_dir + "lotsize.yaml")
+        print(f"lotsize \n {lotsize}")
+        freeze = futl.get_lst_fm_yml(sec_dir + "freeze.yaml")
+        print(f"freeze:{freeze}")
+    except FileNotFoundError as e:
+        print(f"{e} while getting preferences")
+    return ignore, lotsize, freeze
+
+
+ignore, lotsize, freeze = get_preferences()
+
+
+def load_all_users(fpath=sec_dir + filename):
     lst_truth = [True, 'y', 'Y', 'Yes', 'yes', 'YES']
-    users = futil.xls_to_dict(fpath)
+    users = futl.xls_to_dict(fpath)
     obj_ldr, objs_usr = None, {}
     for u in users:
         is_disabled = u.get('disabled', False)
@@ -43,7 +57,7 @@ def load_all_users(fpath=fpath):
 # get leader and followers instance
 obj_ldr, objs_usr = load_all_users()
 # get copier class instance
-cop = Copier(dct_lots)
+cop = Copier(lotsize)
 # mutating combined positions followers df
 # df_pos = pd.DataFrame()
 
@@ -134,9 +148,9 @@ def do_multiply(multiplied):
                     m['price'] = lst_price[-1] + (BUFF*dir)
             m['order_type'] = ORDER_TYPE
             if m['exchange'] == 'NFO':
-                symbol = next(k for k, v in maxlots.items()
+                symbol = next(k for k, v in freeze.items()
                               if m['symbol'].startswith(k))
-                iceberg = maxlots.get(symbol, 0)
+                iceberg = freeze.get(symbol, 0)
                 # iceberg slicing needed
                 if iceberg > 0 and abs(quantity) >= iceberg:
                     remainder = int(abs(quantity % iceberg) * dir)
@@ -172,7 +186,7 @@ def slp_til_next_sec():
     return interval
 
 
-if futil.is_file_not_2day(dumpfile):
+if futl.is_file_not_2day(dumpfile):
     obj_ldr.contracts(dumpfile)
 while True:
     try:
