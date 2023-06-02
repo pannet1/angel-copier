@@ -23,6 +23,8 @@ class User(object):
                                 password=self._password)
         if self._broker.authenticate():
             self._disabled = False
+        else:
+            print(vars(self))
 
     def ltp(self, **kwargs):
         return self._broker.obj.ltpData(
@@ -50,10 +52,11 @@ class User(object):
             "order_type": kwargs["order_type"],
             "product": kwargs["product"],
             "duration": 'DAY',
-            "price": kwargs["price"],
+            "price": kwargs.get('price', 0),
             "quantity": kwargs["quantity"]
         }
         params['trigger_price'] = kwargs.get('trigger_price', '0')
+        print(params)
         return self._broker.order_place(**params)
 
     def contracts(self, dumpfile):
@@ -74,7 +77,7 @@ class User(object):
 
 if __name__ == "__main__":
     futil = Fileutils()
-    users = futil.xls_to_dict("../../../../confid/ketan_users.xls")
+    users = futil.xls_to_dict("../../../users_ao.xls")
     for u in users:
         au = User(**u)
         au.auth()

@@ -8,8 +8,8 @@ import pandas as pd
 from tests.small import test_trades as small
 
 
-ORDER_TYPE = 'MARKET'  # OR MARKET
-BUFF = 50              # Rs. to add/sub to LTP
+ORDER_TYPE = "MARKET"  # or LIMIT
+BUFF = 2             # Rs. to add/sub to LTP
 filename = 'users_ao.xls'
 
 sec_dir = "../../../"
@@ -140,8 +140,8 @@ def do_multiply(multiplied):
             ensure that the symbol is in the max lots list
             if not iceberg is zero
             """
+            m['token'] = obj_usr.get_symbols(m['symbol'], dumpfile)
             if ORDER_TYPE == 'LIMIT':
-                m['token'] = obj_usr.get_symbols(m['symbol'], dumpfile)
                 dct = obj_usr.ltp(**m)
                 lst_price = [value for value in dct['data'].values()]
                 if type(lst_price) == list:
@@ -173,7 +173,9 @@ def do_multiply(multiplied):
             if SINGLE_ORDER:
                 SINGLE_ORDER = False
                 m['quantity'] = abs(int(quantity))
+                print(m)
                 status = obj_usr.place_order(m)
+                print(status)
                 logging.info(f'single order: {status} {m}')
         except Exception as e:
             logging.warning(f"while multiplying {e}")
