@@ -175,7 +175,6 @@ def do_multiply(multiplied):
                 m['quantity'] = abs(int(quantity))
                 print(m)
                 status = obj_usr.place_order(m)
-                print(status)
                 logging.info(f'single order: {status} {m}')
         except Exception as e:
             logging.warning(f"while multiplying {e}")
