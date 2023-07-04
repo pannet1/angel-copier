@@ -8,7 +8,7 @@ from toolkit.logger import Logger
 import inspect
 
 logging = Logger(20)  # 2nd param 'logfile.log'
-fpath = '../../../users_ao.xls'
+fpath = '../../../ao_users.xls'
 futil = Fileutils()
 
 
@@ -32,7 +32,7 @@ def load_all_users(fpath=fpath):
 # get leader and followers instance
 obj_ldr, objs_usr = load_all_users()
 
-pages = ['home']
+pages = ['home', 'positions', 'orders']
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 jt = Jinja2Templates(directory="templates")
@@ -69,6 +69,7 @@ async def users(request: Request):
         td.append(completed_count)
         pos = u._broker.positions
         lst_pos = pos.get('data', [])
+        print(lst_pos)
         sum = 0
         if lst_pos:
             for dct in lst_pos:
@@ -82,8 +83,8 @@ async def users(request: Request):
 
 
 @app.get("/orderbook/{user_id}", response_class=HTMLResponse)
-async def orders(request: Request,
-                 user_id: str = 'no data'):
+async def orderbook(request: Request,
+                    user_id: str = 'no data'):
     ctx = {"request": request, "title": inspect.stack()[0][3], 'pages': pages}
     ctx['th'] = ['message']
     ctx['data'] = [user_id]
@@ -143,8 +144,8 @@ async def orders(request: Request,
 
 
 @app.get("/positionbook/{user_id}", response_class=HTMLResponse)
-async def positions(request: Request,
-                    user_id: str = 'no data'):
+async def positionbook(request: Request,
+                       user_id: str = 'no data'):
     ctx = {"request": request, "title": inspect.stack()[0][3], 'pages': pages}
     ctx['th'] = ['message']
     ctx['data'] = [user_id]
