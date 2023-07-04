@@ -10,7 +10,7 @@ from tests.small import test_trades as small
 
 ORDER_TYPE = "MARKET"  # or LIMIT
 BUFF = 2             # Rs. to add/sub to LTP
-filename = 'users_ao.xls'
+filename = 'ao_users.xls'
 
 sec_dir = "../../../"
 dumpfile = sec_dir + "symbols.json"
