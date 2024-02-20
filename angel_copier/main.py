@@ -1,3 +1,4 @@
+from numpy import isin
 from toolkit.logger import Logger
 from toolkit.fileutils import Fileutils
 from copier import Copier
@@ -5,17 +6,13 @@ from user import User
 from datetime import datetime as dt
 from time import sleep
 import pandas as pd
-from tests.small import test_trades as small
 
-
+sec_dir = "../../../"
+logging = Logger(20, sec_dir + "angel-copier.log")  # 2nd param 'logfile.log'
+dumpfile = sec_dir + "symbols.json"
 ORDER_TYPE = "MARKET"  # or LIMIT
 BUFF = 2             # Rs. to add/sub to LTP
 filename = 'ao_users.xls'
-
-sec_dir = "../../../"
-dumpfile = sec_dir + "symbols.json"
-logging = Logger(20, sec_dir + "angel-copier.log")  # 2nd param 'logfile.log'
-
 TEST = False
 futl = Fileutils()
 
@@ -74,9 +71,9 @@ def get_pos(obj):
         lst_pos = []
         pos = obj._broker.positions
         lst_data = pos.get('data', None)
-        if type(lst_data) is list:
+        if isinstance(lst_data, list):
             for each_pos in lst_data:
-                if type(each_pos) is dict:
+                if isinstance(each_pos, dict):
                     dct_pos = each_pos
                     dct_pos = replace_key('tradingsymbol', 'symbol', dct_pos)
                     dct_pos = replace_key("netqty", "quantity", dct_pos)
@@ -95,14 +92,14 @@ def flwrs_pos():
     """
     try:
         df_ord = df_pos = pd.DataFrame()
-        ldr_pos = small if TEST else get_pos(obj_ldr)
+        ldr_pos = get_pos(obj_ldr)
         if ldr_pos:
             dct_ldr = cop.filter_pos(ldr_pos)
             cop.set_ldr_df(dct_ldr, ignore)
             if not cop.df_ldr.empty:
-                for id, u in objs_usr.items():
+                for _, u in objs_usr.items():
                     # we show position of flwrs only
-                    # if there is eader positions
+                    # if there is leader positions
                     # pass the flwr multiplier from xls
                     df_tgt = cop.get_tgt_df(u._multiplier)
                     pos = get_pos(u)
@@ -144,7 +141,7 @@ def do_multiply(multiplied):
             if ORDER_TYPE == 'LIMIT':
                 dct = obj_usr.ltp(**m)
                 lst_price = [value for value in dct['data'].values()]
-                if type(lst_price) == list:
+                if isinstance(lst_price, list):
                     m['price'] = lst_price[-1] + (BUFF*dir)
             m['order_type'] = ORDER_TYPE
             if m['exchange'] == 'NFO':
