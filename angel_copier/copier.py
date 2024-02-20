@@ -21,6 +21,7 @@ class Copier():
                            'quantity']
         self.dct_lots = dct_lots
         self.ds = Datastruct()
+        self.df_ldr = pd.DataFrame()
 
     def _rounded_lot(self, df: pd.DataFrame):
         """

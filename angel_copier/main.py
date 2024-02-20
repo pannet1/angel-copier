@@ -85,6 +85,26 @@ def get_pos(obj):
         return lst_pos
 
 
+def is_copy_ready():
+    is_copy = False
+    try:
+        prev_df = cop.df_ldr.copy()
+        ldr_pos = get_pos(obj_ldr)
+        if ldr_pos and any(ldr_pos):
+            dct_ldr = cop.filter_pos(ldr_pos)
+            cop.set_ldr_df(dct_ldr, ignore)
+            if (
+                len(prev_df) == len(cop.df_ldr) and
+                cop.df_ldr.equals(prev_df)
+            ):
+                is_copy = True
+    except Exception as e:
+        print(f' error {e} while getting leader positions')
+    finally:
+        print("is_copy_ready: ", is_copy)
+        return is_copy
+
+
 def flwrs_pos():
     """
     do necessary quantity calculations for
@@ -92,30 +112,26 @@ def flwrs_pos():
     """
     try:
         df_ord = df_pos = pd.DataFrame()
-        ldr_pos = get_pos(obj_ldr)
-        if ldr_pos:
-            dct_ldr = cop.filter_pos(ldr_pos)
-            cop.set_ldr_df(dct_ldr, ignore)
-            if not cop.df_ldr.empty:
-                for _, u in objs_usr.items():
-                    # we show position of flwrs only
-                    # if there is leader positions
-                    # pass the flwr multiplier from xls
-                    df_tgt = cop.get_tgt_df(u._multiplier)
-                    pos = get_pos(u)
-                    if pos:
-                        dct_flwr = cop.filter_pos(pos)
-                    else:
-                        dct_flwr = {}
-                    # pass the user id from xls
-                    df_ord = cop.get_diff_pos(u._userid, df_tgt, dct_flwr)
-                    df_ord = df_ord[df_ord.quantity != '0']
-                    # join the order dfs
-                    if not df_ord.empty:
-                        df_pos = df_ord if df_pos.empty else pd.concat(
-                            [df_pos, df_ord], sort=True)
-                    else:
-                        print("no follower orders")
+        if not cop.df_ldr.empty:
+            for _, u in objs_usr.items():
+                # we show position of flwrs only
+                # if there is leader positions
+                # pass the flwr multiplier from xls
+                df_tgt = cop.get_tgt_df(u._multiplier)
+                pos = get_pos(u)
+                if pos:
+                    dct_flwr = cop.filter_pos(pos)
+                else:
+                    dct_flwr = {}
+                # pass the user id from xls
+                df_ord = cop.get_diff_pos(u._userid, df_tgt, dct_flwr)
+                df_ord = df_ord[df_ord.quantity != '0']
+                # join the order dfs
+                if not df_ord.empty:
+                    df_pos = df_ord if df_pos.empty else pd.concat(
+                        [df_pos, df_ord], sort=True)
+                else:
+                    print("no follower orders")
     except Exception as e:
         print(f'{e} in flwr pos')
     finally:
@@ -190,15 +206,16 @@ while True:
     try:
         data = {}
         data['positions'] = [{'MESSAGE': 'no positions yet'}]
-        df_pos = flwrs_pos()
-        if not df_pos.empty:
-            data['positions'] = df_pos.to_dict('records')
-            do_multiply(data['positions'])
-        else:
-            print("follower positions are empty")
-        interval = 1
-        sleep(interval)
-        print(f'sleeping for {interval} ms')
+        if is_copy_ready():
+            df_pos = flwrs_pos()
+            if not df_pos.empty:
+                data['positions'] = df_pos.to_dict('records')
+                do_multiply(data['positions'])
+            else:
+                print("follower positions are empty")
+            interval = 1
+            sleep(interval)
+            print(f'sleeping for {interval} ms')
 
     except Exception as e:
         print(f"error {e} in the main loop")
