@@ -101,7 +101,6 @@ def is_copy_ready():
     except Exception as e:
         print(f' error {e} while getting leader positions')
     finally:
-        print("is_copy_ready: ", is_copy)
         return is_copy
 
 
