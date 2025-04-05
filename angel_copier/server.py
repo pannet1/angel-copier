@@ -1,11 +1,12 @@
-from toolkit.fileutils import Fileutils
 from user import User
+from toolkit.logger import Logger
+from toolkit.fileutils import Fileutils
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from toolkit.logger import Logger
 import inspect
+
 
 logging = Logger(20)  # 2nd param 'logfile.log'
 fpath = "../../ao_users.xls"
@@ -33,6 +34,7 @@ def load_all_users(fpath=fpath):
 
 # get leader and followers instance
 obj_ldr = load_all_users()
+
 
 pages = ["home", "positions", "orders"]
 app = FastAPI()
